@@ -23,13 +23,13 @@ class interpreter:
         return self.tape[self.head]
     
     def write(self, val):
-        self.tape[self.head] = int(val) % 255
+        self.tape[self.head] = int(val) % 256
     
     def inc(self):
-        self.tape[self.head] = (self.tape[self.head] + 1) % 255
+        self.tape[self.head] = (self.tape[self.head] + 1) % 256
     
     def dec(self):
-        self.tape[self.head] = (self.tape[self.head] - 1) % 255
+        self.tape[self.head] = (self.tape[self.head] - 1) % 256
     
     def enterLoop(self, program):
         if self.read() == 0:
@@ -80,6 +80,11 @@ class interpreter:
     def interpret(self, program, scope):
         self.pc = -1
         program = self.cleanProg(program)
+        
+        if program == "":
+            print("No valid BrainFuck detected!")
+            return None
+        
         print("Executing from: ", scope)
         
         while self.pc < len(program) - 1 and self.head < self.tapeLength - 1:
@@ -124,6 +129,7 @@ def showHelp():
     print("Enter a BrainFuck script at the prompt ($) and press enter to execute.")
     print("Enter 'h' to display this help text.")
     print("Enter 'r' or 'reset' to reset the interpreter state.")
+    print("Enter 'q' or 'quit' to quit.")
     print()
 
 def printTape(tape):
@@ -142,8 +148,10 @@ if __name__ == "__main__":
     interp = interpreter()
     
     if args.file:
-        out = interp.interpret(parseFile(args.file), f"<{args.file}>")[:25]
-        printTape(out)
+        out = interp.interpret(parseFile(args.file), f"<{args.file}>")
+        
+        if out != None:
+            printTape(out[:25])
     
     else:
         while 1:
@@ -156,8 +164,9 @@ if __name__ == "__main__":
                 interp = interpreter()
                 print("Interpreter reset!")
             else:
-                out = interp.interpret(inp, "<input>")[:25]
-                printTape(out)
+                out = interp.interpret(inp, "<input>")
+                if out != None:
+                    printTape(out[:25])
     
     
     
