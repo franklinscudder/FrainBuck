@@ -1,0 +1,185 @@
+
+SYMBOLS = "[]+-.,<>"
+
+class interpreter:
+    def __init__(self, initialTape=None, initialHeadIdx=None, tapeLength=30000, asChar=True):
+        self.loopEntries = []
+        self.asChar = asChar
+        self.tapeLength = tapeLength
+        self.tape = initialTape if initialTape else [0]*tapeLength
+        self.head = initialHeadIdx if initialHeadIdx else 0
+        self.pc = -1
+        
+    def cleanProg(self, program):
+        cleaned = program
+        
+        for char in program:
+            if char not in SYMBOLS:
+                cleaned = cleaned.replace(char, "")
+                
+        return cleaned
+    
+    def read(self):
+        return self.tape[self.head]
+    
+    def write(self, val):
+        self.tape[self.head] = int(val) % 255
+    
+    def inc(self):
+        self.tape[self.head] = (self.tape[self.head] + 1) % 255
+    
+    def dec(self):
+        self.tape[self.head] = (self.tape[self.head] - 1) % 255
+    
+    def enterLoop(self, program):
+        if self.read() == 0:
+            loopDepth = 1
+            while loopDepth > 0:
+                char = self.getNextChar(program)
+                loopDepth += 1 if char == "[" else 0
+                loopDepth -= 1 if char == "]" else 0
+            
+        else:
+            self.loopEntries.append(self.pc)
+    
+    def exitLoop(self):
+        if self.read() != 0:
+            self.pc = self.loopEntries.pop() - 1
+        else:
+            self.loopEntries.pop()
+    
+    def getNextChar(self, program):
+        self.pc += 1
+        return program[self.pc]
+    
+    def processInput(self):
+        valid = False
+        
+        while not valid:
+            inp = input("\nEnter a value (Blank is EOF): ")
+            
+            if inp == "":
+                inp = 0
+                valid = True
+            
+            else:
+                try:
+                    inp = ord(inp)
+                except:
+                    print("Invalid input!")
+                    continue
+                
+                if inp >= 0 and inp <= 255:
+                    valid = True
+                else:
+                    print("Invalid input!")
+        
+        self.write(inp)
+            
+    
+    def interpret(self, program, scope):
+        self.pc = -1
+        program = self.cleanProg(program)
+        print("Executing from: ", scope)
+        
+        while self.pc < len(program) - 1 and self.head < self.tapeLength - 1:
+            currentChar = self.getNextChar(program)
+            self.processChar(currentChar, program)
+            
+        if self.head >= self.tapeLength - 1:
+            print("\nRan out of Tape!")
+        else:
+            print("\nExecution Completed Successfully!")
+        return self.tape
+        
+    def processChar(self, char, program):
+        if char == "+":
+            self.inc()
+        elif char == "-":
+            self.dec()
+        elif char == ">":
+            self.head += 1
+        elif char == "<":
+            self.head -= 1
+        elif char == ".":
+            val = chr(self.read()) if self.asChar else self.read()
+            print(val,end="")
+        elif char == ",":
+            self.processInput()
+        elif char == "[":
+            self.enterLoop(program)
+        elif char == "]":
+            self.exitLoop()
+        else:
+            raise RuntimeError("Unrecognized BF command! " + char)
+ 
+def parseFile(path):
+    f = open(path, "r")
+    txt = f.read()
+    return txt
+
+def showHelp():
+    print()
+    print("*** FRAINBUCK HELP ***")
+    print("Enter a BrainFuck script at the prompt ($) and press enter to execute.")
+    print("Enter 'h' to display this help text.")
+    print("Enter 'r' or 'reset' to reset the interpreter state.")
+    print()
+
+def printTape(tape):
+    print("TAPE: |", end="")
+    for i in tape[:-1]:
+        print(str(i) + "|", end="")
+    print(str(tape[-1]) + "|")
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file", help="Path to file to be interpreted")
+    args = parser.parse_args()
+    
+    interp = interpreter()
+    
+    if args.file:
+        out = interp.interpret(parseFile(args.file), f"<{args.file}>")[:25]
+        printTape(out)
+    
+    else:
+        while 1:
+            inp = input("[FrainBuck] $ ")
+            if inp.lower() in ["q","quit"]:
+                quit()
+            elif inp.lower() in ["help","h"]:
+                showHelp()
+            elif inp.lower() in ["r","reset"]:
+                interp = interpreter()
+                print("Interpreter reset!")
+            else:
+                out = interp.interpret(inp, "<input>")[:25]
+                printTape(out)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        
