@@ -1,5 +1,6 @@
 
 SYMBOLS = "[]+-.,<>"
+import os
 
 class interpreter:
     def __init__(self, initialTape=None, initialHeadIdx=None, tapeLength=30000, asChar=True):
@@ -19,6 +20,17 @@ class interpreter:
                 cleaned = cleaned.replace(char, "")
                 
         return cleaned
+        
+    def validateProgram(self, program):
+        loopLevel = 0
+        
+        for char in program:
+            if char == "[":
+                loopLevel += 1
+            elif char == "]":
+                loopLevel -= 1
+        
+        return not loopLevel
     
     def read(self):
         return self.tape[self.head]
@@ -92,19 +104,26 @@ class interpreter:
         self.pc = -1
         program = self.cleanProg(program)
         
+        if not self.validateProgram(program):
+            print("BF Syntax Error: Unmatched brackets in source!")
+            print()
+            return None
+        
         if program == "":
             print("No valid BrainFuck detected!")
+            print()
             return None
         
         print("Executing from: ", scope)
-        print()
+        #print()
         
-        while self.pc < len(program) - 1 and self.head < self.tapeLength - 1:
+        while self.pc < len(program) - 1 and self.head < self.tapeLength - 1 and self.head >= 0:
             currentChar = self.getNextChar(program)
             self.processChar(currentChar, program)
             
-        if self.head >= self.tapeLength - 1:
+        if self.head >= self.tapeLength - 1 or self.head < 0:
             print("\nRan out of Tape!")
+            self.head = 0
         else:
             print("\nExecution Completed Successfully!")
         return self.tape
@@ -129,6 +148,25 @@ class interpreter:
             self.exitLoop()
         else:
             raise RuntimeError("Unrecognized BF command! " + char)
+            
+    def printTape(self, start, length):
+        tape = self.tape[start:start+length]
+        
+        if tape != []:
+            if start != 0:
+                print("Starting index: ", start)
+            
+            print("TAPE: |", end="")
+            for i in tape[:-1]:
+                print(str(i) + "|", end="")
+            print(str(tape[-1]) + "|")
+        
+            if self.head >= length+start:
+               print(">".rjust(2*length + 9))
+            elif self.head < start:
+                print("<".rjust(7))
+            else:
+                print("^".rjust(2*(self.head-start) + 8))
  
 def parseFile(path):
     f = open(path, "r")
@@ -140,16 +178,16 @@ def showHelp():
     print()
     print("*** FRAINBUCK HELP ***")
     print("Enter a BrainFuck script at the prompt ($) and press enter to execute.")
-    print("Enter 'h' to display this help text.")
+    print("Enter the path of a .b source file to run it.")
+    print("Enter 'h' or 'help' to display this help text.")
     print("Enter 'r' or 'reset' to reset the interpreter state.")
     print("Enter 'q' or 'quit' to quit.")
+    print("Enter 'c' or 'clear' to clear the console.")
+    print("Enter 't' or 'tape' to adjust the length of memory tape printed after execution.")
+    print("Enter 'i' or 'index' to set the starting index of the tape output (default is 0).")
     print()
 
-def printTape(tape):
-    print("TAPE: |", end="")
-    for i in tape[:-1]:
-        print(str(i) + "|", end="")
-    print(str(tape[-1]) + "|")
+
 
 
 if __name__ == "__main__":
@@ -157,6 +195,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", help="Path to file to be interpreted")
     args = parser.parse_args()
+    TAPE_START = 0
+    TAPE_LENGTH = 0
     
     interp = interpreter()
     
@@ -164,7 +204,7 @@ if __name__ == "__main__":
         out = interp.interpret(parseFile(args.file), f"<{args.file}>")
         
         if out != None:
-            printTape(out[:25])
+            interp.printTape(TAPE_START, TAPE_LENGTH)
     
     else:
         while 1:
@@ -172,24 +212,46 @@ if __name__ == "__main__":
             if inp.lower() in ["q","quit"]:
                 quit()
                 
-            elif inp.lower() in ["help","h"]:
+            elif inp.lower() in ["help","h","?"]:
                 showHelp()
+                
+            elif inp.lower() in ["clear","c","cls"]:
+                os.system("cls")
                 
             elif inp.lower() in ["r","reset"]:
                 interp = interpreter()
                 print("Interpreter reset!")
+                print()
+                
+            elif inp.lower() in ["tape", "t"]:
+                valid = False
+                while not valid:
+                    try:
+                        TAPE_LENGTH = max(0,int(input("Specify how much memory tape to print after execution (0 for no output): ")))
+                        valid = True
+                    except:
+                        print("Must be a positive integer!")
+                        
+            elif inp.lower() in ["i", "index", "ti", "tapeindex"]:
+                valid = False
+                while not valid:
+                    try:
+                        TAPE_START = max(0,int(input("Specify the starting index of printed memory tape (default=0): ")))
+                        valid = True
+                    except:
+                        print("Must be a positive integer!")
                 
             elif inp[-2:] == ".b":
                 interp = interpreter()
                 print("Interpreter reset!")
                 out = interp.interpret(parseFile(inp), f"<{inp}>")
                 if out != None:
-                    printTape(out[:25])
+                    interp.printTape(TAPE_START, TAPE_LENGTH)
 
             else:
                 out = interp.interpret(inp, "<input>")
                 if out != None:
-                    printTape(out[:25])
+                    interp.printTape(TAPE_START, TAPE_LENGTH)
     
     
     
