@@ -93,7 +93,7 @@ class interpreter:
                 else:
                     print("Invalid input!")
                 out.append(char)
-            except:
+            except TypeError:
                 print("Invalid input!")
                 
                 
@@ -169,10 +169,15 @@ class interpreter:
                 print("^".rjust(2*(self.head-start) + 8))
  
 def parseFile(path):
-    f = open(path, "r")
-    txt = f.read()
-    f.close()
-    return txt
+    try:
+        f = open(path, "r")
+        txt = f.read()
+        f.close()
+        return txt
+        
+    except FileNotFoundError:
+        print("Error: Source file not found!")
+        return ""
 
 def showHelp():
     print()
@@ -229,7 +234,7 @@ if __name__ == "__main__":
                     try:
                         TAPE_LENGTH = max(0,int(input("Specify how much memory tape to print after execution (0 for no output): ")))
                         valid = True
-                    except:
+                    except ValueError:
                         print("Must be a positive integer!")
                         
             elif inp.lower() in ["i", "index", "ti", "tapeindex"]:
@@ -238,7 +243,7 @@ if __name__ == "__main__":
                     try:
                         TAPE_START = max(0,int(input("Specify the starting index of printed memory tape (default=0): ")))
                         valid = True
-                    except:
+                    except ValueError:
                         print("Must be a positive integer!")
                 
             elif inp[-2:] == ".b":
