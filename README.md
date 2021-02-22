@@ -33,4 +33,5 @@ The program requires Python >=3.7 installed on Windows.
 Credit and License
 ====================
 Relesed under the MIT software license. Feel free to adapt and distribute with acknowledgment.
-The demo source files here were all written by Daniel B. Cristofani at http://brainfuck.org/ .
+The demo source files here were all written by Daniel B. Cristofani at http://brainfuck.org/,
+except for mandlebrot.b which was written by Erik Bosman at https://copy.sh/brainfuck/.
