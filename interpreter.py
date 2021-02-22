@@ -9,6 +9,7 @@ class interpreter:
         self.tape = initialTape if initialTape else [0]*tapeLength
         self.head = initialHeadIdx if initialHeadIdx else 0
         self.pc = -1
+        self.inputBuffer = []
         
     def cleanProg(self, program):
         cleaned = program
@@ -56,26 +57,36 @@ class interpreter:
         valid = False
         
         while not valid:
-            inp = input("\nEnter a value (Blank is EOF): ")
-            
-            if inp == "":
-                inp = 0
-                valid = True
-            
-            else:
-                try:
-                    inp = ord(inp)
-                except:
-                    print("Invalid input!")
-                    continue
+            if len(self.inputBuffer) == 0:
+                inp = input("\nEnter input: ")
+                valid, inp = self.verifyInput(inp)
+                self.inputBuffer += inp[1:]
                 
-                if inp >= 0 and inp <= 255:
+                inp = inp[0]
+                    
+            else:
+                inp = self.inputBuffer.pop(0)
+                valid = True
+                
+        self.write(inp)
+        
+    def verifyInput(self, inp):
+        valid = False
+        out = []
+        for char in inp:
+            try:
+                char = ord(char)
+                if char >= 0 and char <= 255:
                     valid = True
                 else:
                     print("Invalid input!")
-        
-        self.write(inp)
-            
+                out.append(char)
+            except:
+                print("Invalid input!")
+                
+                
+        out.append(0)
+        return valid, out
     
     def interpret(self, program, scope):
         self.pc = -1
@@ -86,6 +97,7 @@ class interpreter:
             return None
         
         print("Executing from: ", scope)
+        print()
         
         while self.pc < len(program) - 1 and self.head < self.tapeLength - 1:
             currentChar = self.getNextChar(program)
@@ -121,6 +133,7 @@ class interpreter:
 def parseFile(path):
     f = open(path, "r")
     txt = f.read()
+    f.close()
     return txt
 
 def showHelp():
@@ -158,11 +171,21 @@ if __name__ == "__main__":
             inp = input("[FrainBuck] $ ")
             if inp.lower() in ["q","quit"]:
                 quit()
+                
             elif inp.lower() in ["help","h"]:
                 showHelp()
+                
             elif inp.lower() in ["r","reset"]:
                 interp = interpreter()
                 print("Interpreter reset!")
+                
+            elif inp[-2:] == ".b":
+                interp = interpreter()
+                print("Interpreter reset!")
+                out = interp.interpret(parseFile(inp), f"<{inp}>")
+                if out != None:
+                    printTape(out[:25])
+
             else:
                 out = interp.interpret(inp, "<input>")
                 if out != None:
